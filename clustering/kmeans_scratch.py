@@ -1,16 +1,22 @@
 import logging
 import numpy as np
 
+logging.basicConfig(format='%(message)s', level=logging.DEBUG)  # setting level to debug; will log all types of logging
 LOG = logging.getLogger(__name__)
 
 
 class KMeansScratch:
-    def __init__(self, n_clusters, max_iterations, scale_data=True, seed=2019):
+    def __init__(self,
+                 n_clusters,
+                 max_iterations,
+                 tolerance,
+                 scale_data=True, seed=2019):
 
         self.n_clusters = n_clusters
         self.max_iterations = max_iterations
         self.scale_data = scale_data
-        self.seed = seed
+        self._seed = seed
+        self._tolerance = tolerance
 
         self.X = None
         self._initial_centroids = None
@@ -30,7 +36,7 @@ class KMeansScratch:
         return X_scaled
 
     def _initialize_centroids(self, X):
-        np.random.seed(self.seed)
+        np.random.seed(self._seed)
         rand_idx = np.random.randint(len(X), size=self.n_clusters)
         self._initial_centroids = X[rand_idx, :]
 
@@ -66,8 +72,10 @@ class KMeansScratch:
         return new_centroids[1:(self.n_clusters + 1), :]  # exclude the first row - zeros
 
     def fit(self, X):
+        # TODO: debbug or info?
+        LOG.debug('Fitting KMeansScratch model')
+
         if self.scale_data:
-            # TODO: logger is not working now
             LOG.info('Scaling data as scale_data set to {}'.format(self.scale_data))
             X_scaled = self._scale_data(X)
         else:
@@ -80,9 +88,20 @@ class KMeansScratch:
 
         cluster_dict, cluster_mapping_point = self._assign_to_nearest_centroid(X_scaled, self._initial_centroids)
 
-        for i in range(self.max_iterations):
-            new_centroids = self._get_new_centroids(cluster_dict, n_features=n_features)
-            cluster_dict, cluster_mapping_point = self._assign_to_nearest_centroid(X_scaled, new_centroids)
+        new_centroids = self._get_new_centroids(cluster_dict, n_features=n_features)
+        centroid_distance = self._calculate_distance(self._initial_centroids, new_centroids)
+
+        for i in range(1, self.max_iterations):
+            LOG.info('Iteration {} of {} iterations'.format(i, self.max_iterations))
+            if centroid_distance > self._tolerance:
+                prev_centroids = new_centroids
+                cluster_dict, cluster_mapping_point = self._assign_to_nearest_centroid(X_scaled, new_centroids)
+                new_centroids = self._get_new_centroids(cluster_dict, n_features=n_features)
+                centroid_distance = self._calculate_distance(prev_centroids, new_centroids)
+
+            else:
+                LOG.info('Model converged earlier at iteration {} before maximum iterations'.format(i))
+                break
 
         self._cluster_dict_final = cluster_dict
         self._cluster_mapping_point_final = cluster_mapping_point
