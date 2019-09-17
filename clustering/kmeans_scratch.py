@@ -26,12 +26,15 @@ class KMeansScratch:
         self.centroids = None
 
     @staticmethod
-    def _scale_data(input_data):
-        input_data_numeric = input_data.select_dtypes(exclude=['object', 'category'])
+    def _get_numeric_df(df):
+        return df.select_dtypes(exclude=['object', 'category'])
+
+    @staticmethod
+    def _scale_data(input_data_numeric):
         X = input_data_numeric.values
         col_min = np.min(X, axis=0)
         col_max = np.max(X, axis=0)
-        X_scaled = (X - col_min) / (col_max - col_min)
+        X_scaled = (X - col_min) / (col_max - col_min)  # normalise data between [0, 1]
 
         return X_scaled
 
@@ -72,15 +75,16 @@ class KMeansScratch:
         return new_centroids[1:(self.n_clusters + 1), :]  # exclude the first row - zeros
 
     def fit(self, X):
-        # TODO: debbug or info?
-        LOG.debug('Fitting KMeansScratch model')
+        LOG.info('Fitting KMeansScratch model')
+
+        LOG.info('Selecting only numeric columns for clustering')
+        X_numeric_df = self._get_numeric_df(X)
 
         if self.scale_data:
             LOG.info('Scaling data as scale_data set to {}'.format(self.scale_data))
-            X_scaled = self._scale_data(X)
+            X_scaled = self._scale_data(X_numeric_df)
         else:
             LOG.info('Not scaling data as scale_data set to {}'.format(self.scale_data))
-            X_numeric_df = X.select_dtypes(exclude=['object', 'category'])
             X_scaled = X_numeric_df.values
 
         self._initialize_centroids(X_scaled)
@@ -98,7 +102,6 @@ class KMeansScratch:
                 cluster_dict, cluster_mapping_point = self._assign_to_nearest_centroid(X_scaled, new_centroids)
                 new_centroids = self._get_new_centroids(cluster_dict, n_features=n_features)
                 centroid_distance = self._calculate_distance(prev_centroids, new_centroids)
-
             else:
                 LOG.info('Model converged earlier at iteration {} before maximum iterations'.format(i))
                 break
@@ -108,9 +111,9 @@ class KMeansScratch:
         self.centroids = new_centroids
 
         # get the cluster labels
-        self.labels_ = self.pred_cluster()
+        self.labels_ = self.predict()
 
-    def pred_cluster(self):
+    def predict(self):
         row_cluster_list = []
 
         for key in self._cluster_mapping_point_final:
@@ -123,4 +126,3 @@ class KMeansScratch:
         cluster_list = [c[1] for c in row_cluster_list]
 
         return cluster_list
-

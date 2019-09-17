@@ -16,10 +16,12 @@ iris = load_iris()
 # read larger dataset
 df_input = pd.read_csv('latent_factors.csv')
 
-print(df_input.head())
+# print(df_input.head())
 
 start_time = time.time()
-kmeans_scratch = KMeansScratch(n_clusters=4, max_iterations=20, scale_data=True, seed=10, tolerance=0.1)
+kmeans_scratch = KMeansScratch(n_clusters=4, max_iterations=5,
+                               scale_data=False,
+                               seed=10, tolerance=0.1)
 
 
 kmeans_scratch.fit(df_input)
@@ -39,3 +41,5 @@ print('The unique clusters are: {} \n'.format(unique(cluster_labels)))
 for c in unique(cluster_labels):
     print('No. of points in each cluster:')
     print(cluster_labels.count(c))
+
+print('centroids of clusters: {}'.format(kmeans_scratch.centroids))

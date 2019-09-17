@@ -1,0 +1,13 @@
+# Stupid Mac Stuff
+.DS_Store
+
+#PyCharm
+.idea/
+
+# IPython Notebook
+.ipynb_checkpoints
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
