@@ -19,8 +19,8 @@ df_input = pd.read_csv('latent_factors.csv')
 # print(df_input.head())
 
 start_time = time.time()
-kmeans_scratch = KMeansScratch(n_clusters=4, max_iterations=5,
-                               scale_data=False,
+kmeans_scratch = KMeansScratch(n_clusters=4, max_iterations=15,
+                               scale_data=True,
                                seed=10, tolerance=0.1)
 
 

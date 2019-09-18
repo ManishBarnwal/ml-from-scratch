@@ -81,27 +81,33 @@ class KMeansScratch:
         X_numeric_df = self._get_numeric_df(X)
 
         if self.scale_data:
-            LOG.info('Scaling data as scale_data set to {}'.format(self.scale_data))
+            LOG.info('Normalizing data as scale_data set to {}'.format(self.scale_data))
             X_scaled = self._scale_data(X_numeric_df)
         else:
             LOG.info('Not scaling data as scale_data set to {}'.format(self.scale_data))
             X_scaled = X_numeric_df.values
 
+        self._run_kmeans_iterations(X_scaled)
+        # # get the cluster labels
+        self.labels_ = self.predict()
+
+    def _run_kmeans_iterations(self, X_scaled):
         self._initialize_centroids(X_scaled)
         n_features = X_scaled.shape[1]
 
         cluster_dict, cluster_mapping_point = self._assign_to_nearest_centroid(X_scaled, self._initial_centroids)
-
         new_centroids = self._get_new_centroids(cluster_dict, n_features=n_features)
         centroid_distance = self._calculate_distance(self._initial_centroids, new_centroids)
 
         for i in range(1, self.max_iterations):
             LOG.info('Iteration {} of {} iterations'.format(i, self.max_iterations))
+
             if centroid_distance > self._tolerance:
                 prev_centroids = new_centroids
                 cluster_dict, cluster_mapping_point = self._assign_to_nearest_centroid(X_scaled, new_centroids)
                 new_centroids = self._get_new_centroids(cluster_dict, n_features=n_features)
                 centroid_distance = self._calculate_distance(prev_centroids, new_centroids)
+
             else:
                 LOG.info('Model converged earlier at iteration {} before maximum iterations'.format(i))
                 break
@@ -109,9 +115,6 @@ class KMeansScratch:
         self._cluster_dict_final = cluster_dict
         self._cluster_mapping_point_final = cluster_mapping_point
         self.centroids = new_centroids
-
-        # get the cluster labels
-        self.labels_ = self.predict()
 
     def predict(self):
         row_cluster_list = []
